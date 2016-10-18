@@ -1,0 +1,137 @@
+## $Id: project.tmpl 13 2011-04-20 15:41:43Z mmamonski $
+#encoding utf-8
+#extends project_template.templates.Autotools
+
+#def generated_files
+#return (Autotools.generated_files(self)
+  | set([
+		"m4/ac_c_bigendian_cross.m4",
+		"m4/acx_pthread.m4",
+		"m4/ax_docutils.m4",
+		"m4/ax_func_gettid.m4",
+		"m4/ax_func_va_copy.m4",
+		"m4/ax_gperf.m4",
+		"m4/bison_ylwrap.sh",
+		"Makefile.am",
+		]))
+#end def
+
+#block ac_arguments
+${Autotools.ac_arguments(self)}
+AC_ARG_WITH(drmaa-utils, AC_HELP_STRING([--with-drmaa-utils=...],
+		[used only to detect that drmaa utils is sub packaged]))
+AM_CONDITIONAL([DRMAA_UTILS_STANDALONE],
+		[test x\$with_drmaa_utils = x])
+#end block ac_arguments
+
+#block ac_programs
+${Autotools.ac_programs(self)}
+
+#raw
+\# code generation tools:
+AC_PROG_YACC
+AX_GPERF
+AC_CHECK_PROGS([RAGEL], [ragel], [sh m4/missing-dev-prog.sh ragel])
+
+\# reStructuredText processing:
+AX_DOCUTILS
+\# documentation generation:
+AC_CHECK_PROGS([DOT], [dot])
+if test x$DOT != x; then
+	HAVE_DOT=yes
+else
+	HAVE_DOT=no
+fi
+AC_SUBST([HAVE_DOT])
+#end raw
+#end block ac_programs
+
+#block ac_system
+${Autotools.ac_system(self)}
+
+AC_C_BIGENDIAN_CROSS
+#end block ac_system
+
+
+#block ac_libraries
+#raw
+ACX_PTHREAD([CFLAGS="$CFLAGS $PTHREAD_CFLAGS" LIBS="$PTHREAD_LIBS $LIBS"],
+		[AC_MSG_ERROR([POSIX threads library is required by DRMAA.])])
+#end raw
+#end block ac_libraries
+
+#block ac_headers
+AC_CHECK_HEADERS([execinfo.h fcntl.h inttypes.h libintl.h limits.h malloc.h stddef.h stdint.h stdlib.h string.h sys/time.h unistd.h])
+AC_HEADER_STDBOOL
+AC_HEADER_TIME
+#end block ac_headers
+
+#block ac_types
+AC_TYPE_PID_T
+AC_TYPE_SIZE_T
+AC_TYPE_SSIZE_T
+AC_TYPE_MODE_T
+AC_TYPE_UINT16_T
+AC_TYPE_UINT32_T
+AC_TYPE_UINT8_T
+#end block ac_types
+
+#block ac_structures
+AC_STRUCT_TM
+#end block ac_structures
+
+#block ac_functions
+AC_FUNC_ALLOCA
+AC_FUNC_MALLOC
+AC_FUNC_REALLOC
+AC_FUNC_STRERROR_R
+AC_FUNC_STRFTIME
+AC_CHECK_FUNCS([ \
+	asprintf \
+	fstat \
+	getcwd \
+	gettimeofday \
+	localtime_r \
+	memset \
+	mkstemp \
+	strchr \
+	strdup \
+	strerror \
+	strlcpy \
+	strndup \
+	strstr \
+	vasprintf])
+AX_FUNC_GETTID
+AX_FUNC_VA_COPY
+AC_SEARCH_LIBS([backtrace], [execinfo])
+#end block ac_functions
+
+#block ac_config_files
+AC_CONFIG_FILES([
+	Makefile
+	drmaa_utils/Makefile
+	test/Makefile
+	Doxyfile
+])
+AC_CONFIG_HEADERS([config.h])
+#end block ac_config_files
+
+## #block ac_success_message
+## ${Autotools.ac_success_message(self)}
+## #end block ac_success_message
+
+
+#block top_makefile_am
+${makefile_am_header}
+${top_makefile_am_specific}
+SUBDIRS = drmaa_utils test
+#end block top_makefile_am
+
+#block boring_project_specific
+^drmaa_utils/conf_tab.c$
+^drmaa_utils/conf_tab.h$
+^drmaa_utils/datetime_tab.c$
+^drmaa_utils/datetime_tab.h$
+^drmaa_utils/drmaa_attrib.c$
+^test/test_exception$
+#end block boring_project_specific
