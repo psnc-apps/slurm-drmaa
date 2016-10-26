@@ -76,6 +76,7 @@ drmaa_duration_slimit, t(DRMAA_ATTR_SOFT_RUN_DURATION_LIMIT)
 static const fsd_attribute_t *
 drmaa_template_by_name( const fsd_template_t *self, const char *name )
 {
+	FSD_UNUSED(self);
 	const struct drmaa_attrib *found;
 	found = drmaa_attrib_lookup( name, strlen(name) );
 	if( found != NULL )
@@ -91,6 +92,8 @@ drmaa_template_by_name( const fsd_template_t *self, const char *name )
 static const fsd_attribute_t *
 drmaa_template_by_code( const fsd_template_t *self, int code )
 {
+	FSD_UNUSED(self);
+
 	if( 0 <= code  &&  code < DRMAA_N_ATTRIBUTES )
 		return & drmaa_attributes[ code ];
 	else

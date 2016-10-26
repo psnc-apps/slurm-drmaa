@@ -103,6 +103,7 @@ void
 _fsd_log( int level, const char *file, const char *function,
 		int kind, char *message )
 {
+	FSD_UNUSED(file);
 	const bool color = false;
 	char colorbeg[16];
 	const char *colorend;

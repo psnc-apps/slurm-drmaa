@@ -278,6 +278,7 @@ int run_and_wait(fsd_drmaa_api_t api, fsd_drmaa_run_opt_t run_opt)
 	char stderr_name[1048] = "";
 	char jobid[DRMAA_JOBNAME_BUFFER] = "";
 	int status;
+	char **args_vector = NULL;
 
 	extern char **environ;
 
@@ -292,9 +293,7 @@ int run_and_wait(fsd_drmaa_api_t api, fsd_drmaa_run_opt_t run_opt)
 
 	/*  args */
 	if (run_opt.command_argc > 0) {
-		char **args_vector = NULL;
 		int i;
-
 
 		fsd_calloc(args_vector, run_opt.command_argc + 1, char *);
 
@@ -321,9 +320,9 @@ int run_and_wait(fsd_drmaa_api_t api, fsd_drmaa_run_opt_t run_opt)
 
 
 	/* stdout.PID stderr.PID */
-	sprintf(stdin_name, ":%s/.stdin.%u", working_directory, (unsigned int) getpid());
-	sprintf(stdout_name, ":%s/.stdout.%u", working_directory, (unsigned int) getpid());
-	sprintf(stderr_name, ":%s/.stderr.%u", working_directory, (unsigned int) getpid());
+	snprintf(stdin_name, sizeof(stdin_name) - 1, ":%s/.stdin.%u", working_directory, (unsigned int) getpid());
+	snprintf(stdout_name, sizeof(stdout_name) - 1, ":%s/.stdout.%u", working_directory, (unsigned int) getpid());
+	snprintf(stderr_name, sizeof(stderr_name) - 1, ":%s/.stderr.%u", working_directory, (unsigned int) getpid());
 
 
 	/* read stdin */
@@ -357,7 +356,6 @@ int run_and_wait(fsd_drmaa_api_t api, fsd_drmaa_run_opt_t run_opt)
 	}
 
 	/* wait */
-
 	if (api.wait(jobid, NULL, 0, &status, DRMAA_TIMEOUT_WAIT_FOREVER, NULL, errbuf, sizeof(errbuf) - 1) != DRMAA_ERRNO_SUCCESS) {
 		fsd_log_fatal(("Failed to wait for a job %s: %s ", jobid, errbuf));
 		exit(132); /* TODO Exception */
@@ -452,10 +450,22 @@ retry2:
 
 		api.exit(errbuf, sizeof(errbuf) - 1);
 		fsd_log_info(("exit_status = %d", exit_status));
+
+		if ( jt )
+			api.delete_job_template( jt, NULL, 0 );
+
+		fsd_free( args_vector );
+	
 		return exit_status;
 	}
+
 fault:
-	fsd_log_fatal(("Error"));
+	if ( jt )
+		api.delete_job_template( jt, NULL, 0 );
+
+	fsd_free( args_vector );
+	
+	fsd_log_fatal(( "Error" ));
 	return 1;
 }
 

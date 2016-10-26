@@ -189,7 +189,11 @@ slurmdrmaa_add_attribute(job_desc_msg_t *job_desc, unsigned attr, const char *va
 			break;
 		case SLURM_NATIVE_ACCTG_FREQ:
 			fsd_log_debug(("# acctg_freq = %s",value));
+#if SLURM_VERSION_NUMBER > SLURM_VERSION_NUM(2,5,0)
+			job_desc->acctg_freq = fsd_strdup(value);
+#else
 			job_desc->acctg_freq = fsd_atoi(value);
+#endif
 			break;
 		case SLURM_NATIVE_COMMENT:
 			fsd_free(job_desc->comment);

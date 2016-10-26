@@ -188,7 +188,7 @@ fsd_drmaa_api_t load_drmaa()
 		goto fault;
 	if ((api.run_job = (drmaa_run_job_function_t)dlsym(api.handle, "drmaa_run_job")) == 0)
 		goto fault;
-	if ((api.run_bulk_jobs = (drmaa_run_job_function_t)dlsym(api.handle, "drmaa_run_bulk_jobs")) == 0)
+	if ((api.run_bulk_jobs = (drmaa_run_bulk_jobs_function_t)dlsym(api.handle, "drmaa_run_bulk_jobs")) == 0)
 		goto fault;
 	if ((api.control = (drmaa_control_function_t)dlsym(api.handle, "drmaa_control")) == 0)
 		goto fault;
@@ -296,9 +296,10 @@ int run_and_wait(fsd_drmaa_api_t api, fsd_drmaa_run_bulk_opt_t run_opt)
 	char stdout_name[1048] = "";
 	char stderr_name[1048] = "";
 	/*char jobid[DRMAA_JOBNAME_BUFFER] = "";*/
-	fsd_iter_t *jobids;
+	fsd_iter_t *jobids = NULL;
 	/*char **jobids = NULL;*/
 	int status;
+	char **args_vector = NULL;
 
 	extern char **environ;
 
@@ -313,7 +314,6 @@ int run_and_wait(fsd_drmaa_api_t api, fsd_drmaa_run_bulk_opt_t run_opt)
 
 	/*  args */
 	if (run_opt.command_argc > 0) {
-		char **args_vector = NULL;
 		int i;
 
 
@@ -502,11 +502,29 @@ retry2:
 			}
 		}
 
+		if ( jt )
+			api.delete_job_template( jt, NULL, 0 );
+
+		fsd_free( args_vector );
+
+		if ( jobids )
+			jobids->destroy( jobids );
+			
 		api.exit(errbuf, sizeof(errbuf) - 1);
 		fsd_log_info(("exit_status = %d", exit_status));
+		
 		return exit_status;
 	}
 fault:
+	fsd_free( args_vector );
+
+	if ( jobids )
+		jobids->destroy( jobids );
+
+	api.delete_job_template( jt, NULL, 0 );
+
+	api.exit(errbuf, sizeof(errbuf) - 1);
+
 	fsd_log_fatal(("Error"));
 	return 1;
 }

@@ -31,6 +31,9 @@
 
 #define FSD_SAFE_STR(str) ( str != NULL ? str : "(null)" )
 
+#define FSD_UNUSED(x) (void)(x)
+
+
 /* configuration */
 typedef struct fsd_conf_option_s  fsd_conf_option_t;
 typedef struct fsd_conf_dict_s    fsd_conf_dict_t;

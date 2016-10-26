@@ -127,12 +127,17 @@ fsd_job_destroy( fsd_job_t *self )
 void
 fsd_job_control( fsd_job_t *self, int action )
 {
+	FSD_UNUSED(self);
+	FSD_UNUSED(action);
+
 	fsd_exc_raise_code( FSD_ERRNO_NOT_IMPLEMENTED );
 }
 
 void
 fsd_job_update_status( fsd_job_t *self )
 {
+	FSD_UNUSED(self);
+
 	fsd_exc_raise_code( FSD_ERRNO_NOT_IMPLEMENTED );
 }
 

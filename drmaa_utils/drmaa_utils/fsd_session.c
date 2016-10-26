@@ -512,6 +512,10 @@ fsd_drmaa_session_run_impl(
 		fsd_drmaa_session_t *self,
 		const fsd_template_t *jt, int bulk_incr )
 {
+	FSD_UNUSED(self);
+	FSD_UNUSED(jt);
+	FSD_UNUSED(bulk_incr);
+
 	fsd_exc_raise_code( FSD_ERRNO_NOT_IMPLEMENTED );
 }
 

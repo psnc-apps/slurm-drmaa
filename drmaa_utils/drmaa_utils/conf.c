@@ -278,6 +278,7 @@ fsd_conf_error(
 		const char *fmt, ...
 		)
 {
+	FSD_UNUSED(lexer);
 	char *volatile message = NULL;
 	va_list args;
 

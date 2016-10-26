@@ -98,12 +98,14 @@ slurmdrmaa_session_run_bulk(
 	job_desc_msg_t job_desc;
 	submit_response_msg_t *submit_response = NULL;
 	job_info_msg_t *job_info = NULL;
+#if SLURM_VERSION_NUMBER > SLURM_VERSION_NUM(14,10,0)
+	int v = 0;
+#endif
 
     /* zero out the struct, and set default vaules */
 	slurm_init_job_desc_msg( &job_desc );
 	
-	TRY
-	 {
+	TRY {
         unsigned i;
 		if( start != end ) {
 			n_jobs = (end - start) / incr + 1;
@@ -119,7 +121,7 @@ slurmdrmaa_session_run_bulk(
 
 		connection_lock = fsd_mutex_lock( &self->drm_connection_mutex );
 		slurmdrmaa_job_create_req( self, jt, (fsd_environ_t**)&env , &job_desc );
-		if(slurm_submit_batch_job(&job_desc,&submit_response)){
+		if ( slurm_submit_batch_job(&job_desc, &submit_response )) {
 			fsd_exc_raise_fmt(
 				FSD_ERRNO_INTERNAL_ERROR,"slurm_submit_batch_job: %s",slurm_strerror(slurm_get_errno()));
 		}
@@ -129,13 +131,15 @@ slurmdrmaa_session_run_bulk(
 		fsd_log_debug(("job %u submitted", submit_response->job_id));
 
 		if ( start != 0 || end != 0 || incr != 0 ) {
-			if ( SLURM_SUCCESS == slurm_load_job( &job_info, submit_response->job_id, 0) )
-			{
+			if ( SLURM_SUCCESS == slurm_load_job( &job_info, submit_response->job_id, 0) ) {
+#if SLURM_VERSION_NUMBER > SLURM_VERSION_NUM(14,10,0)
+				for (i = 0, v = start; i < n_jobs; i++, v += incr) {
+					job_ids[i] = fsd_asprintf( "%d_%d", submit_response->job_id, v);
+#else
 				fsd_assert(  job_info->record_count == n_jobs );
-				for(i=0; i < job_info->record_count; i++)
-				{
+				for(i=0; i < job_info->record_count; i++) {
 					job_ids[i] = fsd_asprintf( "%d", job_info->job_array[i].job_id);
-
+#endif
 					job = slurmdrmaa_job_new( fsd_strdup(job_ids[i]) );
 					job->session = self;
 					job->submit_time = time(NULL);
@@ -156,20 +160,18 @@ slurmdrmaa_session_run_bulk(
 			job->release( job );
 			job = NULL;
 		}
-	 }
-	 ELSE
-	{
+	} ELSE {
 		if ( !connection_lock )
 			connection_lock = fsd_mutex_lock( &self->drm_connection_mutex );
+	} FINALLY {
+		if ( job_info != NULL )
+			slurm_free_job_info_msg( job_info );
 
-		slurm_free_submit_response_response_msg ( submit_response );
-	}
-	FINALLY
-	 {
-		
-			
 		if( connection_lock )
 			fsd_mutex_unlock( &self->drm_connection_mutex );
+
+		if ( submit_response )
+			slurm_free_submit_response_response_msg ( submit_response );
 
 		if( job )
 			job->release( job );
@@ -178,8 +180,7 @@ slurmdrmaa_session_run_bulk(
 			fsd_free_vector( job_ids );
 			
 		slurmdrmaa_free_job_desc(&job_desc);
-	 }
-	END_TRY
+	} END_TRY
 
 	return fsd_iter_new( job_ids, n_jobs );
 }

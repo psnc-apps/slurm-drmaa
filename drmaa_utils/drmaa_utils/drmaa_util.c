@@ -51,8 +51,8 @@ fsd_expand_drmaa_ph_expand( fsd_expand_drmaa_ph_t *self, char *s, unsigned set )
 			mask <<= 1
 			)
 	 {
-		const char *ph;
-		const char *value;
+		const char *ph = NULL;
+		const char *value = NULL;
 
 		switch( mask )
 		 {

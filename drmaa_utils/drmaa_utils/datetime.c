@@ -256,7 +256,7 @@ fsd_datetime_parse( const char *string )
 	fsd_dt_lexer_t *volatile lexer = NULL;
 	int parse_err = 0;
 	fsd_datetime_t dt;
-	time_t result;
+	time_t result = 0;
 
 	fsd_log_enter(( "(%s)", string ));
 	TRY
