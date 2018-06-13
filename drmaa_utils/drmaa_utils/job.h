@@ -195,6 +195,10 @@ struct fsd_job_set_s {
 	void (*
 	remove)( fsd_job_set_t *self, fsd_job_t *job );
 
+	/** Remove job from set. */
+	void (*
+	remove_by_id)( fsd_job_set_t *self, const char *job_id );
+
 	/**
 	 * Finds job with given job_id.
 	 * @param job_set Set of jobs to search in.

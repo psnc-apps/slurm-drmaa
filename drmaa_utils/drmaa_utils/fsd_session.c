@@ -576,11 +576,9 @@ fsd_drmaa_session_wait_for_single_job(
 
 			locked = fsd_mutex_lock( &self->mutex );
 
-			job = self->get_job( self, job_id );
-			if (job != NULL)
-			 {
-				self->jobs->remove( self->jobs, job );
-				job->flags |= FSD_JOB_DISPOSED;
+			if (job != NULL) {
+				self->jobs->remove_by_id( self->jobs, job_id );
+				job = NULL;
 			 }
 			else
 			 {
@@ -675,14 +673,13 @@ fsd_drmaa_session_wait_for_any_job(
 	 }
 	FINALLY
 	 {
-		if( job )
-		 {
-			if( fsd_exc_get() == NULL  &&  dispose )
-			 {
-				set->remove( set, job );
-				job->flags |= FSD_JOB_DISPOSED;
+		if( job ) {
+			job->release( job ); /*release mutex in order to ensure proper order of locking: first job_set mutex then job mutex */
+
+			if( fsd_exc_get() == NULL  &&  dispose ) {
+				set->remove_by_id( set, job_id );
+				job = NULL;
 			 }
-			job->release( job );
 		 }
 		if( locked )
 			fsd_mutex_unlock( &self->mutex );

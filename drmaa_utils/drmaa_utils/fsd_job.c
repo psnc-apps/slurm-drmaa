@@ -207,6 +207,8 @@ static void
 fsd_job_set_add( fsd_job_set_t *self, fsd_job_t *job );
 static void
 fsd_job_set_remove( fsd_job_set_t *self, fsd_job_t *job );
+static void
+fsd_job_set_remove_by_id( fsd_job_set_t *self, const char *job_id );
 static fsd_job_t *
 fsd_job_set_get( fsd_job_set_t *self, const char *job_id );
 static bool
@@ -231,6 +233,7 @@ fsd_job_set_new(void)
 		self->destroy = fsd_job_set_destroy;
 		self->add = fsd_job_set_add;
 		self->remove = fsd_job_set_remove;
+		self->remove_by_id = fsd_job_set_remove_by_id;
 		self->get = fsd_job_set_get;
 		self->empty = fsd_job_set_empty;
 		self->find_terminated = fsd_job_set_find_terminated;
@@ -294,6 +297,57 @@ fsd_job_set_add( fsd_job_set_t *self, fsd_job_t *job )
 	job->ref_cnt++;
 	fsd_mutex_unlock( &self->mutex );
 	fsd_log_return(( ": job->ref_cnt=%d", job->ref_cnt ));
+}
+
+
+void
+fsd_job_set_remove_by_id( fsd_job_set_t *self, const char *job_id )
+{
+	fsd_job_t **pjob = NULL;
+	fsd_job_t *job = NULL;
+	uint32_t h;
+
+	fsd_log_enter(( "(job_id=%s)", job_id ));
+	fsd_mutex_lock( &self->mutex );
+	TRY
+	 {
+		h = hashstr( job_id, strlen(job_id), 0 );
+		h &= self->tab_mask;
+		for( pjob = &self->tab[ h ];  *pjob;  pjob = &(*pjob)->next )
+		 {
+			if( ! strcmp( (*pjob)->job_id, job_id ) )
+				break;
+		 }
+		if( *pjob )
+		 {
+			job = *pjob;
+
+			fsd_mutex_lock( &job->mutex );
+
+			*pjob = (*pjob)->next;
+
+			job->next = NULL;
+			job->flags |= FSD_JOB_DISPOSED;
+
+			self->n_jobs--;
+
+			fsd_log_return(( ": job->ref_cnt=%d", job->ref_cnt ));
+			fsd_log_info(( "#%d of jobs after remove", self->n_jobs ));
+/*			fprintf( stdout, "#%d of jobs after remove", self->n_jobs );
+			fflush( stdout );*/
+
+			job->release( job );
+			job = NULL;
+		 }
+	 }
+	FINALLY
+	 {
+		 if ( job )
+			 fsd_mutex_unlock( &job->mutex );
+
+		 fsd_mutex_unlock( &self->mutex );
+	}
+	END_TRY
 }
 
 

@@ -378,7 +378,7 @@ drmaa_run_job(
 	TRY
 	 {
 		session = fsd_drmaa_session_get();
-		job_id_buf = session->run_job( session, (fsd_template_t*)jt ),
+		job_id_buf = session->run_job( session, (fsd_template_t*)jt );
 		strlcpy( job_id, job_id_buf, job_id_len );
 	 }
 	FINALLY
